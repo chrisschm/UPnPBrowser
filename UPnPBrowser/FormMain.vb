@@ -7,6 +7,7 @@ Public Class FormMain
 
     Private DeviceFinder As New UPnPDeviceFinder
     Private fData As Integer = 0
+    Private selectedURL As String = ""
 
     Private Sub MenuExit_Click(sender As Object, e As EventArgs) Handles MenuExit.Click
         Me.Close()
@@ -41,7 +42,9 @@ Public Class FormMain
     End Sub
 
     Public Sub DeviceRemoved(lFindData As Integer, bstrUDN As String) Implements IUPnPDeviceFinderCallback.DeviceRemoved
-        Debug.Print(bstrUDN)
+
+        TreeView.Nodes.Remove(TreeView.Nodes.Item(bstrUDN))
+
     End Sub
 
     Public Sub SearchComplete(lFindData As Integer) Implements IUPnPDeviceFinderCallback.SearchComplete
@@ -53,6 +56,7 @@ Public Class FormMain
         If e.Node.Tag = "Root" Or IsNothing(e.Node.Tag) Then
             ListView.Items.Clear()
             ListView.View = View.LargeIcon
+            selectedURL = ""
             Exit Sub
         End If
 
@@ -70,18 +74,40 @@ Public Class FormMain
                         LVItem.SubItems(0).Text = Service.Id
                         LVItem.SubItems.Add(Service.ServiceTypeIdentifier)
 
-
-
+                        Dim doc As IUPnPServiceDocumentAccess
+                        doc = Service
+                        If Not IsNothing(doc) Then
+                            Dim url As String = ""
+                            doc.GetDocumentURL(url)
+                            LVItem.SubItems.Add(url)
+                        End If
                     Next
                 Catch
                     StatusLabel.Text = ""
+                    selectedURL = ""
                     Exit Sub
                 End Try
-
+            Else
+                selectedURL = ""
             End If
+        Else
+            selectedURL = ""
         End If
         StatusLabel.Text = ""
 
     End Sub
 
+    Private Sub ListView_ItemSelectionChanged(sender As Object, e As ListViewItemSelectionChangedEventArgs) Handles ListView.ItemSelectionChanged
+
+        selectedURL = e.Item.SubItems(2).Text
+
+    End Sub
+
+    Private Sub ListView_DoubleClick(sender As Object, e As EventArgs) Handles ListView.DoubleClick
+
+        If selectedURL.Length > 0 Then
+            Process.Start(selectedURL)
+        End If
+
+    End Sub
 End Class
